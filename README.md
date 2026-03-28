@@ -1,4 +1,4 @@
-# Internship Projects — Ivan Morhun
+# IST 495 Internship Projects — Ivan Morhun
 
 This repository contains all three projects completed as part of the IST 495 cybersecurity internship lecture series under Professor Kaamran Raahemifar at Penn State University.
 
