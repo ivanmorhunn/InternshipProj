@@ -1,6 +1,6 @@
 # Internship Projects — Ivan Morhun
 
-This repository contains all three projects completed as part of the IST 432 cybersecurity internship lecture series under Professor Kaamran Raahemifar at Penn State University.
+This repository contains all three projects completed as part of the IST 495 cybersecurity internship lecture series under Professor Kaamran Raahemifar at Penn State University.
 
 Each project builds on the last, culminating in a self-hosted private cloud accessible over a secure mesh VPN.
 
