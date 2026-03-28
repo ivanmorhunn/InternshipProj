@@ -1,0 +1,1326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>MeshCloud</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0a0f;--s1:#111118;--s2:#1a1a24;--border:#2a2a3a;
+  --accent:#00ff88;--accent2:#0088ff;--red:#ff3355;--yl:#ffcc00;
+  --text:#e8e8f0;--muted:#666680;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{background:var(--bg);color:var(--text);font-family:"Space Mono",monospace;min-height:100vh;}
+body::before{content:"";position:fixed;inset:0;background-image:linear-gradient(rgba(0,255,136,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,136,.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+
+/* ─── AUTH ─────────────────────────────────────────────── */
+#auth-screen{
+  display:flex;align-items:center;justify-content:center;
+  min-height:100vh;padding:16px;position:relative;z-index:1;
+}
+.auth-box{
+  background:var(--s1);border:1px solid var(--border);
+  width:100%;max-width:420px;position:relative;
+}
+.auth-box::before{
+  content:"";position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,var(--accent),var(--accent2));
+}
+.auth-logo{padding:24px 24px 0;font-family:"Syne",sans-serif;font-weight:800;font-size:20px;}
+.auth-logo span{color:var(--accent);}
+.auth-logo small{display:block;font-size:11px;color:var(--muted);font-family:"Space Mono",monospace;font-weight:400;margin-top:3px;}
+.tabs-row{display:flex;padding:16px 24px 0;border-bottom:1px solid var(--border);margin-top:16px;}
+.tab{padding:8px 0;margin-right:20px;font-size:10px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s;}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.auth-body{padding:20px 24px 24px;}
+
+/* ─── INPUTS ────────────────────────────────────────────── */
+input,select,textarea{
+  width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);
+  padding:11px 13px;font-family:"Space Mono",monospace;font-size:13px;outline:none;
+  -webkit-appearance:none;border-radius:0;
+}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);}
+select{cursor:pointer;}
+textarea{resize:vertical;min-height:70px;}
+.form-group{margin-bottom:12px;}
+.form-group label{display:block;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:5px;}
+.error-msg{background:rgba(255,51,85,.1);border:1px solid rgba(255,51,85,.3);color:var(--red);padding:9px 12px;font-size:11px;margin-bottom:12px;display:none;line-height:1.5;}
+.success-msg{background:rgba(0,255,136,.1);border:1px solid rgba(0,255,136,.3);color:var(--accent);padding:9px 12px;font-size:11px;margin-bottom:12px;display:none;}
+.hint{font-size:11px;color:var(--muted);line-height:1.6;}
+
+/* ─── BUTTONS ────────────────────────────────────────────── */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  padding:10px 16px;font-family:"Space Mono",monospace;font-size:11px;
+  letter-spacing:1px;text-transform:uppercase;cursor:pointer;border:none;
+  transition:all .15s;-webkit-tap-highlight-color:transparent;border-radius:0;
+}
+.btn-primary{background:var(--accent);color:#000;font-weight:700;width:100%;}
+.btn-primary:hover,.btn-primary:active{background:#00ffaa;}
+.btn-secondary{background:transparent;border:1px solid var(--border);color:var(--muted);}
+.btn-secondary:hover{border-color:var(--text);color:var(--text);}
+.btn-sm{padding:5px 10px;font-size:10px;}
+.btn-danger{background:transparent;border:1px solid var(--red);color:var(--red);}
+.btn-danger:hover,.btn-danger:active{background:var(--red);color:#fff;}
+.btn-blue{background:transparent;border:1px solid var(--accent2);color:var(--accent2);}
+.btn-blue:hover,.btn-blue:active{background:var(--accent2);color:#fff;}
+
+/* ─── DASHBOARD ─────────────────────────────────────────── */
+#dashboard{display:none;min-height:100vh;position:relative;z-index:1;}
+
+/* Topbar */
+.topbar{
+  background:var(--s1);border-bottom:1px solid var(--border);
+  padding:0 16px;display:flex;align-items:center;justify-content:space-between;
+  height:50px;position:sticky;top:0;z-index:50;
+}
+.topbar-logo{font-family:"Syne",sans-serif;font-weight:800;font-size:17px;}
+.topbar-logo span{color:var(--accent);}
+.topbar-right{display:flex;align-items:center;gap:10px;}
+.user-pill{display:flex;align-items:center;gap:6px;font-size:12px;}
+.user-dot{width:6px;height:6px;background:var(--accent);border-radius:50%;flex-shrink:0;}
+.logout-btn{font-size:10px;letter-spacing:1px;background:none;border:none;color:var(--muted);cursor:pointer;text-transform:uppercase;font-family:"Space Mono",monospace;padding:4px;}
+.logout-btn:hover{color:var(--red);}
+.notif-btn{position:relative;background:none;border:none;cursor:pointer;font-size:16px;padding:4px 6px;-webkit-tap-highlight-color:transparent;}
+.notif-badge{
+  position:absolute;top:-2px;right:-2px;background:var(--red);color:#fff;
+  font-size:9px;padding:1px 4px;min-width:16px;text-align:center;
+  font-family:"Space Mono",monospace;
+}
+
+/* Bottom nav (mobile) + side nav (desktop) */
+.bottom-nav{
+  position:fixed;bottom:0;left:0;right:0;background:var(--s1);
+  border-top:1px solid var(--border);display:flex;
+  justify-content:center;z-index:50;height:56px;
+}
+.nav-inner{
+  display:flex;width:100%;max-width:520px;
+}
+.nav-tab{
+  flex:1;display:flex;flex-direction:column;align-items:center;
+  padding:10px 4px 9px;cursor:pointer;font-size:9px;letter-spacing:1.5px;
+  text-transform:uppercase;color:var(--muted);transition:all .2s;
+  -webkit-tap-highlight-color:transparent;position:relative;gap:3px;
+  border-right:1px solid var(--border);
+}
+.nav-tab:last-child{border-right:none;}
+.nav-tab.active{color:var(--tx);background:rgba(255,255,255,.03);}
+.nav-tab.active::after{
+  content:"";position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--accent),transparent);
+}
+.nav-tab-icon{font-size:17px;line-height:1;transition:transform .2s;}
+.nav-tab.active .nav-tab-icon{transform:translateY(-1px);}
+.nav-tab .nbadge{
+  position:absolute;top:6px;right:calc(50% - 18px);
+  background:var(--red);color:#fff;font-size:8px;
+  padding:1px 4px;min-width:14px;text-align:center;
+}
+
+/* Content area - add bottom padding for nav bar */
+.content-wrap{
+  max-width:680px;margin:0 auto;padding:20px 16px 80px;
+}
+
+/* ─── PANELS ─────────────────────────────────────────────── */
+.panel{display:none;}
+.panel.active{display:block;}
+
+/* Storage */
+.storage-card{background:var(--s2);border:1px solid var(--border);padding:14px 16px;margin-bottom:18px;}
+.storage-label{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+.storage-bar-bg{height:3px;background:var(--border);margin-bottom:6px;}
+.storage-bar-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .4s;}
+.storage-numbers{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);}
+
+/* Section header */
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.section-title{font-family:"Syne",sans-serif;font-size:14px;font-weight:700;}
+
+/* Search */
+.search-wrap{position:relative;margin-bottom:14px;}
+.search-wrap input{padding-right:40px;}
+.search-clear{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:0;}
+
+/* Upload zone */
+.upload-zone{
+  border:1px dashed var(--border);padding:36px 16px;text-align:center;
+  cursor:pointer;transition:all .2s;margin-bottom:14px;
+}
+.upload-zone:hover,.upload-zone.dragover{border-color:var(--accent);background:rgba(0,255,136,.03);}
+.upload-zone input[type=file]{display:none;}
+/* Full-panel drag overlay */
+#drag-overlay{
+  display:none;position:fixed;inset:0;z-index:300;
+  background:rgba(0,0,0,.7);backdrop-filter:blur(4px);
+  align-items:center;justify-content:center;flex-direction:column;gap:12px;
+  border:2px dashed var(--accent);pointer-events:none;
+}
+#drag-overlay.active{display:flex;}
+#drag-overlay span{font-family:"Syne",sans-serif;font-size:22px;color:var(--accent);}
+#drag-overlay small{font-size:11px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;}
+.upload-icon{font-size:22px;display:block;margin-bottom:6px;}
+.upload-text{font-size:12px;color:var(--muted);}
+.upload-options{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:8px;}
+.upload-options label{font-size:11px;color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:5px;}
+.upload-progress{display:none;margin-top:12px;}
+.progress-bar-bg{height:6px;background:var(--border);position:relative;overflow:hidden;}
+.progress-bar-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .1s linear;width:0%;}
+.progress-meta{display:flex;align-items:center;justify-content:space-between;margin-top:6px;gap:8px;}
+.progress-label{font-size:10px;color:var(--muted);letter-spacing:1px;flex:1;}
+.progress-stats{font-size:10px;color:var(--muted);letter-spacing:1px;text-align:right;white-space:nowrap;}
+.progress-cancel{background:none;border:1px solid var(--red);color:var(--red);font-family:"Space Mono",monospace;font-size:9px;letter-spacing:1px;text-transform:uppercase;padding:3px 8px;cursor:pointer;flex-shrink:0;transition:all .15s;}
+.progress-cancel:hover{background:var(--red);color:#fff;}
+
+/* Bulk bar */
+.bulk-bar{
+  display:none;background:rgba(0,255,136,.06);border:1px solid rgba(0,255,136,.2);
+  padding:9px 14px;margin-bottom:12px;align-items:center;gap:10px;font-size:11px;flex-wrap:wrap;
+}
+.bulk-bar.show{display:flex;}
+
+/* File list */
+.file-list{display:flex;flex-direction:column;gap:6px;}
+.file-item{
+  background:var(--s2);border:1px solid var(--border);padding:11px 13px;
+  display:flex;align-items:center;gap:10px;transition:border-color .15s;
+}
+.file-item.selected{border-color:var(--accent);background:rgba(0,255,136,.04);}
+.file-check{
+  width:16px;height:16px;cursor:pointer;flex-shrink:0;
+  appearance:none;-webkit-appearance:none;
+  background:var(--bg);border:1px solid var(--border);
+  position:relative;transition:all .15s;
+  display:flex;align-items:center;justify-content:center;
+  align-self:center;margin:auto 0;
+}
+.file-check:checked{background:var(--accent);border-color:var(--accent);}
+.file-check:checked::after{
+  content:"";position:absolute;
+  left:50%;top:45%;
+  width:4px;height:8px;border:2px solid #000;
+  border-top:none;border-left:none;
+  transform:translate(-50%,-50%) rotate(45deg);
+}
+.file-check:hover:not(:checked){border-color:var(--accent);}
+.file-icon{font-size:18px;flex-shrink:0;}
+.file-info{flex:1;min-width:0;}
+.file-name{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.file-meta{font-size:10px;color:var(--muted);margin-top:2px;}
+.file-actions{display:flex;gap:5px;flex-shrink:0;}
+.btn-dl{
+  padding:5px 8px;font-size:10px;letter-spacing:1px;text-transform:uppercase;
+  border:1px solid var(--border);color:var(--muted);font-family:"Space Mono",monospace;
+  text-decoration:none;display:inline-flex;align-items:center;transition:all .15s;
+}
+.btn-dl:hover{border-color:var(--accent);color:var(--accent);}
+.empty-state{text-align:center;padding:48px 16px;color:var(--muted);}
+.empty-state-icon{font-size:36px;display:block;margin-bottom:12px;}
+.empty-state-text{font-size:12px;line-height:1.8;}
+
+/* Trash */
+.trash-item{background:var(--s2);border:1px solid var(--border);padding:11px 13px;display:flex;align-items:center;gap:10px;margin-bottom:6px;}
+
+/* Friends */
+.friend-item{background:var(--s2);border:1px solid var(--border);padding:12px 14px;display:flex;align-items:center;gap:10px;margin-bottom:6px;}
+.friend-avatar{width:30px;height:30px;background:var(--s1);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
+.friend-info{flex:1;min-width:0;}
+.friend-name{font-size:12px;font-weight:700;}
+.friend-status{font-size:10px;color:var(--muted);margin-top:1px;}
+.friend-actions{display:flex;gap:5px;flex-shrink:0;}
+
+/* Messages */
+.conv-list{display:flex;flex-direction:column;gap:6px;margin-bottom:16px;}
+.conv-item{
+  background:var(--s2);border:1px solid var(--border);padding:12px 14px;
+  cursor:pointer;display:flex;align-items:center;gap:10px;
+  -webkit-tap-highlight-color:transparent;
+}
+.conv-item:hover,.conv-item:active{border-color:var(--accent);}
+.conv-avatar{width:32px;height:32px;background:var(--s1);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+.conv-info{flex:1;min-width:0;}
+.conv-name{font-size:12px;font-weight:700;}
+.conv-preview{font-size:10px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.conv-badge{background:var(--red);color:#fff;font-size:9px;padding:1px 5px;flex-shrink:0;}
+
+/* Chat view (full-screen on mobile) */
+#chat-view{display:none;}
+#chat-view.open{
+  display:flex;flex-direction:column;
+  position:fixed;
+  top:50px;left:0;right:0;
+  bottom:calc(56px + env(safe-area-inset-bottom));
+  z-index:40;background:var(--bg);
+}
+.chat-topbar{display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--border);background:var(--s1);flex-shrink:0;}
+.chat-back{background:none;border:none;color:var(--accent);font-size:18px;cursor:pointer;padding:4px;-webkit-tap-highlight-color:transparent;}
+.chat-username{font-size:13px;font-weight:700;}
+.chat-messages{flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:8px;-webkit-overflow-scrolling:touch;}
+.msg{max-width:78%;padding:9px 12px;font-size:12px;line-height:1.6;word-break:break-word;}
+.msg.mine{background:rgba(0,255,136,.12);border:1px solid rgba(0,255,136,.2);align-self:flex-end;}
+.msg.theirs{background:var(--s2);border:1px solid var(--border);align-self:flex-start;}
+.msg-time{font-size:9px;color:var(--muted);margin-top:3px;text-align:right;}
+.chat-input-row{
+  padding:10px 16px;border-top:1px solid var(--border);background:var(--s1);
+  display:flex;gap:8px;flex-shrink:0;
+}
+.chat-input-row textarea{flex:1;height:40px;min-height:40px;padding:9px 12px;font-size:13px;resize:none;}
+.chat-input-row button{width:44px;flex-shrink:0;padding:0;font-size:16px;}
+
+/* Notifications */
+.notif-item{background:var(--s2);border:1px solid var(--border);padding:12px 14px;margin-bottom:6px;display:flex;gap:10px;}
+.notif-item.unread{border-color:rgba(0,255,136,.25);}
+.notif-icon{font-size:16px;flex-shrink:0;}
+.notif-body{flex:1;}
+.notif-msg{font-size:12px;line-height:1.5;}
+.notif-time{font-size:10px;color:var(--muted);margin-top:2px;}
+
+/* Account */
+.acct-section{background:var(--s2);border:1px solid var(--border);padding:18px;margin-bottom:14px;}
+.acct-section h3{font-family:"Syne",sans-serif;font-size:13px;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);}
+
+/* Modals */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:200;display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(3px);}
+.modal-overlay.show{display:flex;}
+@media(min-width:600px){.modal-overlay{align-items:center;}}
+.modal{
+  background:var(--s1);border:1px solid var(--border);padding:24px;
+  width:100%;max-width:420px;position:relative;
+  border-bottom:none;
+}
+@media(min-width:600px){.modal{border-bottom:1px solid var(--border);}}
+.modal::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent2));}
+.modal-close{position:absolute;top:12px;right:14px;background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:4px;}
+.modal-title{font-family:"Syne",sans-serif;font-size:15px;font-weight:700;margin-bottom:14px;}
+
+/* Toast */
+.toast{
+  position:fixed;bottom:72px;left:50%;transform:translateX(-50%) translateY(12px);
+  background:var(--s1);border:1px solid var(--border);padding:11px 22px;
+  font-size:12px;z-index:9999;opacity:0;transition:all .25s;pointer-events:none;
+  white-space:nowrap;max-width:90vw;overflow:hidden;text-overflow:ellipsis;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.toast.tok{border-color:var(--accent)!important;color:var(--accent);}
+.toast.ter{border-color:var(--red)!important;color:var(--red);}
+
+/* Desktop tweaks */
+@media(min-width:768px){
+  .bottom-nav{position:static;border-top:none;flex-direction:column;justify-content:flex-start;width:180px;min-height:calc(100vh - 50px);border-right:1px solid var(--border);}
+  .nav-inner{flex-direction:column;width:100%;max-width:none;}
+  #dashboard .layout{display:flex;}
+  .nav-tab{flex-direction:row;justify-content:flex-start;padding:11px 18px;font-size:10px;gap:10px;border-right:none;border-bottom:1px solid var(--border);}
+  .nav-tab:last-child{border-bottom:none;}
+  .nav-tab-icon{font-size:14px;}
+  .nav-tab.active{background:rgba(255,255,255,.03);}
+  .nav-tab.active::after{top:0;bottom:0;left:0;right:auto;width:1px;height:auto;background:var(--accent);}
+  .nav-tab.active .nav-tab-icon{transform:none;}
+  .nav-tab .nbadge{position:static;margin-left:auto;}
+  .content-wrap{padding-bottom:24px;}
+  .toast{bottom:24px;left:50%;transform:translateX(-50%) translateY(12px);}
+  .toast.show{transform:translateX(-50%) translateY(0);}
+  .modal-overlay{align-items:center;}
+  .modal{border-bottom:1px solid var(--border);}
+  .chat-input-row{margin-bottom:0;padding-bottom:10px;}
+  /* Desktop: fixed, offset left by sidebar width */
+  #chat-view.open{
+    position:fixed;
+    top:50px;left:180px;right:0;bottom:0;
+    height:auto;
+    z-index:40;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- ── AUTH ─────────────────────────────────────────────── -->
+<div id="auth-screen">
+  <div class="auth-box">
+    <div class="auth-logo">Mesh<span>Cloud</span><small>// Private File Server</small></div>
+    <div class="tabs-row">
+      <div class="tab active" onclick="showTab('login')">Login</div>
+      <div class="tab" onclick="showTab('register')">Register</div>
+      <div class="tab" onclick="showTab('recover')">Recover</div>
+    </div>
+    <div class="auth-body">
+
+      <div id="tab-login">
+        <div class="error-msg" id="login-error"></div>
+        <div class="form-group"><label>Username</label>
+          <input type="text" id="login-username" placeholder="your_username" autocomplete="username" onkeydown="if(event.key==='Enter')login()">
+        </div>
+        <div class="form-group"><label>Password</label>
+          <input type="password" id="login-password" placeholder="your password" autocomplete="current-password" onkeydown="if(event.key==='Enter')login()">
+        </div>
+        <button class="btn btn-primary" onclick="login()">→ Sign In</button>
+      </div>
+
+      <div id="tab-register" style="display:none">
+        <div class="error-msg" id="register-error"></div>
+        <div class="success-msg" id="register-success"></div>
+        <div class="form-group"><label>Username</label>
+          <input type="text" id="reg-username" placeholder="choose_username" autocomplete="username">
+        </div>
+        <div class="form-group"><label>Password</label>
+          <input type="password" id="reg-password" placeholder="min 6 characters" autocomplete="new-password">
+        </div>
+        <div class="form-group"><label>Confirm Password</label>
+          <input type="password" id="reg-confirm" placeholder="repeat password">
+        </div>
+        <button class="btn btn-primary" onclick="register()">→ Create Account</button>
+      </div>
+
+      <div id="tab-recover" style="display:none">
+        <div class="error-msg" id="recover-error"></div>
+        <div class="success-msg" id="recover-success"></div>
+        <div id="recover-step1">
+          <div id="recover-stage1">
+            <div class="form-group"><label>Username</label>
+              <input type="text" id="recover-username" placeholder="your_username" onkeydown="if(event.key==='Enter')lookupUser()">
+            </div>
+            <button class="btn btn-primary" onclick="lookupUser()">→ Look Up Account</button>
+          </div>
+          <div id="recover-stage2" style="display:none">
+            <div style="background:var(--bg);border:1px solid var(--border);border-left:3px solid var(--accent);padding:11px 13px;font-size:11px;line-height:1.7;margin-bottom:14px;color:var(--muted)">
+              Account found. Click below to send a password reset request to the admin.<br>
+              Once approved, you will receive a recovery code.
+            </div>
+            <button class="btn btn-primary" onclick="requestRecovery()" style="margin-bottom:8px" id="request-recovery-btn">→ Request Password Reset</button>
+            <button class="btn btn-secondary" onclick="resetRecovery()" style="margin-top:4px">← Back</button>
+          </div>
+        </div>
+        <div id="recover-step2" style="display:none">
+          <div class="form-group"><label>Recovery Code</label>
+            <input type="text" id="recover-code" placeholder="XXXXXXXXXXXXXXXX" style="letter-spacing:3px;text-transform:uppercase">
+          </div>
+          <div class="form-group"><label>New Password</label>
+            <input type="password" id="recover-newpass" placeholder="min 6 characters">
+          </div>
+          <button class="btn btn-primary" onclick="resetPassword()">→ Reset Password</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ── DASHBOARD ─────────────────────────────────────────── -->
+<div id="dashboard">
+  <div class="topbar">
+    <div class="topbar-logo">Mesh<span>Cloud</span></div>
+    <div class="topbar-right">
+      <button class="notif-btn" onclick="showPanel('notifications')">
+        🔔<span class="notif-badge" id="notif-count" style="display:none">0</span>
+      </button>
+      <div class="user-pill"><div class="user-dot"></div><span id="dash-username"></span></div>
+      <button class="logout-btn" onclick="logout()">out</button>
+    </div>
+  </div>
+
+  <div class="layout" id="dash-layout">
+    <!-- Nav (bottom on mobile, side on desktop) -->
+    <nav class="bottom-nav">
+      <div class="nav-inner">
+      <div class="nav-tab active" id="nav-files" onclick="showPanel('files')">
+        <span class="nav-tab-icon">📁</span><span>Files</span>
+      </div>
+      <div class="nav-tab" id="nav-trash" onclick="showPanel('trash')">
+        <span class="nav-tab-icon">🗑</span><span>Trash</span>
+      </div>
+      <div class="nav-tab" id="nav-friends" onclick="showPanel('friends')">
+        <span class="nav-tab-icon">👥</span><span>Friends</span>
+        <span class="nbadge" id="friend-badge" style="display:none">!</span>
+      </div>
+      <div class="nav-tab" id="nav-messages" onclick="showPanel('messages')">
+        <span class="nav-tab-icon">💬</span><span>Messages</span>
+        <span class="nbadge" id="msg-badge" style="display:none">0</span>
+      </div>
+      <div class="nav-tab" id="nav-account" onclick="showPanel('account')">
+        <span class="nav-tab-icon">⚙</span><span>Account</span>
+      </div>
+      </div>
+    </nav>
+
+    <!-- Content -->
+    <div style="flex:1;min-width:0;position:relative;">
+      <div class="content-wrap">
+
+        <!-- Files -->
+        <div class="panel active" id="panel-files">
+          <div class="storage-card">
+            <div class="storage-label">Storage</div>
+            <div class="storage-bar-bg"><div class="storage-bar-fill" id="storage-bar" style="width:0%"></div></div>
+            <div class="storage-numbers"><span id="storage-used-label">0 B</span><span id="storage-quota-label">500 MB</span></div>
+          </div>
+          <div class="search-wrap">
+            <input type="text" id="search-input" placeholder="Search files…" oninput="debounceSearch(this.value)">
+            <button class="search-clear" onclick="clearSearch()">✕</button>
+          </div>
+          <div class="bulk-bar" id="bulk-bar">
+            <span id="bulk-count">0 selected</span>
+            <button class="btn btn-danger btn-sm" onclick="bulkDelete()">🗑 Delete</button>
+            <button class="btn btn-secondary btn-sm" onclick="clearSelection()">✕ Clear</button>
+          </div>
+          <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()">
+            <input type="file" id="file-input" multiple onchange="uploadFiles(this.files)">
+            <span class="upload-icon">⬆</span>
+            <div class="upload-text"><strong>Tap to upload</strong> or drag files here</div>
+            <div class="upload-options" onclick="event.stopPropagation()">
+              
+            </div>
+            <div class="upload-progress" id="upload-progress">
+              <div class="progress-bar-bg"><div class="progress-bar-fill" id="progress-fill"></div></div>
+              <div class="progress-meta">
+                <div class="progress-label" id="progress-label">Uploading…</div>
+                <div class="progress-stats" id="progress-stats"></div>
+                <button class="progress-cancel" id="progress-cancel" onclick="event.stopPropagation();cancelUpload()">✕ Cancel</button>
+              </div>
+            </div>
+          </div>
+          <div class="section-title" style="margin-bottom:10px" id="files-title">Your Files</div>
+          <div id="file-list" class="file-list"></div>
+        </div>
+
+        <!-- Trash -->
+        <div class="panel" id="panel-trash">
+          <div class="section-header">
+            <div class="section-title">Trash</div>
+            <button class="btn btn-danger btn-sm" onclick="emptyTrash()">Empty All</button>
+          </div>
+          <p class="hint" style="margin-bottom:14px">Files auto-delete after 30 days.</p>
+          <div id="trash-list"></div>
+        </div>
+
+        <!-- Friends -->
+        <div class="panel" id="panel-friends">
+          <div class="section-title" style="margin-bottom:12px">Friends</div>
+          <div style="display:flex;gap:8px;margin-bottom:10px">
+            <input type="text" id="friend-input" placeholder="Add by username…" style="flex:1" onkeydown="if(event.key==='Enter')sendInvite()">
+            <button class="btn btn-primary" style="width:auto;padding:0 16px;flex-shrink:0" onclick="sendInvite()">+</button>
+          </div>
+          <div class="error-msg" id="friend-error" style="margin-bottom:10px"></div>
+          <div id="friends-list"></div>
+        </div>
+
+        <!-- Messages -->
+        <div class="panel" id="panel-messages">
+          <div id="conv-panel">
+            <div class="section-title" style="margin-bottom:12px">Messages</div>
+            <div id="conv-list" class="conv-list"></div>
+          </div>
+        </div>
+
+        <!-- Notifications -->
+        <div class="panel" id="panel-notifications">
+          <div class="section-header">
+            <div class="section-title">Notifications</div>
+            <button class="btn btn-secondary btn-sm" onclick="markAllRead()">Mark Read</button>
+          </div>
+          <div id="notif-list"></div>
+        </div>
+
+        <!-- Account -->
+        <div class="panel" id="panel-account">
+          <div class="section-title" style="margin-bottom:14px">Account</div>
+
+          <div class="acct-section">
+            <h3>Display Name</h3>
+            <div class="form-group">
+              <input type="text" id="acct-display" placeholder="Your display name">
+            </div>
+            <button class="btn btn-primary" onclick="saveProfile()">Save</button>
+          </div>
+
+          <div class="acct-section">
+            <h3>Change Password</h3>
+            <div class="error-msg" id="pw-error"></div>
+            <div class="success-msg" id="pw-success"></div>
+            <div class="form-group"><label>Current Password</label>
+              <input type="password" id="pw-current" placeholder="current password">
+            </div>
+            <div class="form-group"><label>New Password</label>
+              <input type="password" id="pw-new" placeholder="min 6 characters">
+            </div>
+            <div class="form-group"><label>Confirm New Password</label>
+              <input type="password" id="pw-confirm" placeholder="repeat new password">
+            </div>
+            <button class="btn btn-primary" onclick="changePassword()">Update Password</button>
+          </div>
+
+          <div class="acct-section">
+            </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Chat view - fixed overlay, right of sidebar on desktop -->
+<div id="chat-view">
+  <div class="chat-topbar">
+    <button class="chat-back" onclick="closeChat()">←</button>
+    <div class="chat-username" id="chat-username"></div>
+  </div>
+  <div class="chat-messages" id="chat-messages"></div>
+  <div class="chat-input-row">
+    <textarea id="msg-input" placeholder="Message…" rows="1"
+      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg();}"></textarea>
+    <button class="btn btn-primary" onclick="sendMsg()">→</button>
+  </div>
+</div>
+
+<!-- Modals -->
+<div class="modal-overlay" id="send-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('send-modal')">✕</button>
+    <div class="modal-title">Send File</div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Send <strong id="send-filename-label"></strong> to:</p>
+    <div id="send-friends-list"></div>
+    <div class="error-msg" id="send-error" style="margin-top:8px"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── State ─────────────────────────────────────────────────────────
+let allFiles       = [];
+let selectedIds    = new Set();
+let activeChatUser = null;
+let sendFileId     = null;
+let pollTimer      = null;
+let searchTimer    = null;
+
+// ── Helpers ───────────────────────────────────────────────────────
+const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const fmt = b => { b=b||0; if(b<1024)return b+' B'; if(b<1048576)return(b/1024).toFixed(1)+' KB'; if(b<1073741824)return(b/1048576).toFixed(1)+' MB'; return(b/1073741824).toFixed(2)+' GB'; };
+const fmtDate = ts => new Date(ts*1000).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+function fileIcon(n){const e=(n.split('.').pop()||'').toLowerCase();return{pdf:'📄',jpg:'🖼',jpeg:'🖼',png:'🖼',gif:'🖼',webp:'🖼',svg:'🖼',mp4:'🎬',mov:'🎬',avi:'🎬',mkv:'🎬',mp3:'🎵',wav:'🎵',flac:'🎵',zip:'📦',rar:'📦','7z':'📦',tar:'📦',gz:'📦',txt:'📝',md:'📝',doc:'📄',docx:'📄',xls:'📊',xlsx:'📊',csv:'📊',py:'🐍',js:'📜',ts:'📜',html:'🌐',css:'🎨',json:'📋',xml:'📋'}[e]||'📁';}
+function showErr(id,msg){const el=document.getElementById(id);el.textContent=msg;el.style.display='block';}
+function hideErr(id){document.getElementById(id).style.display='none';}
+function showSuc(id,msg){const el=document.getElementById(id);el.textContent=msg;el.style.display='block';}
+function closeModal(id){document.getElementById(id).classList.remove('show');}
+let _tt;
+function toast(msg,type='tok',dur=3500){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.className='toast show '+type;
+  clearTimeout(_tt);_tt=setTimeout(()=>el.classList.remove('show'),dur);
+}
+
+// ── Auth ──────────────────────────────────────────────────────────
+function showTab(n){
+  ['login','register','recover'].forEach((t,i)=>{
+    document.getElementById('tab-'+t).style.display=t===n?'block':'none';
+    document.querySelectorAll('.tab')[i].classList.toggle('active',t===n);
+  });
+}
+
+async function login(){
+  hideErr('login-error');
+  const username=document.getElementById('login-username').value.trim();
+  const password=document.getElementById('login-password').value;
+  if(!username||!password)return showErr('login-error','Fill in all fields');
+  const res=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password})});
+  const d=await res.json();
+  if(!res.ok)return showErr('login-error',d.error);
+  initDashboard(d.username,d.display_name);
+}
+
+async function register(){
+  hideErr('register-error');
+  document.getElementById('register-success').style.display='none';
+  const username=document.getElementById('reg-username').value.trim();
+  const password=document.getElementById('reg-password').value;
+  const confirm=document.getElementById('reg-confirm').value;
+  if(!username||!password)return showErr('register-error','Fill in all fields');
+  if(password!==confirm)return showErr('register-error','Passwords do not match');
+  const res=await fetch('/api/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password})});
+  const d=await res.json();
+  if(!res.ok)return showErr('register-error',d.error);
+  showSuc('register-success','✓ Account created! You can now log in.');
+  setTimeout(()=>showTab('login'),1500);
+}
+
+async function logout(){
+  await fetch('/api/logout',{method:'POST'});
+  clearInterval(pollTimer);
+  document.getElementById('dashboard').style.display='none';
+  document.getElementById('auth-screen').style.display='flex';
+  showTab('login');
+}
+
+// ── Recovery ──────────────────────────────────────────────────────
+async function lookupUser(){
+  hideErr('recover-error');
+  const un=document.getElementById('recover-username').value.trim();
+  if(!un)return showErr('recover-error','Enter your username');
+  const btn=document.querySelector('#recover-stage1 .btn-primary');
+  btn.textContent='Checking…';btn.disabled=true;
+  const res=await fetch('/api/check-username',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:un})});
+  btn.textContent='→ Look Up Account';btn.disabled=false;
+  const d=await res.json();
+  if(!res.ok)return showErr('recover-error',d.error||'User not found');
+  document.getElementById('recover-stage1').style.display='none';
+  document.getElementById('recover-stage2').style.display='block';
+}
+function resetRecovery(){
+  document.getElementById('recover-stage1').style.display='block';
+  document.getElementById('recover-stage2').style.display='none';
+  hideErr('recover-error');
+}
+async function requestRecovery(){
+  hideErr('recover-error');
+  const username=document.getElementById('recover-username').value.trim();
+  const btn=document.getElementById('request-recovery-btn');
+  btn.textContent='Sending…';btn.disabled=true;
+  const res=await fetch('/api/request-recovery',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username})});
+  btn.textContent='→ Request Password Reset';btn.disabled=false;
+  const d=await res.json();
+  if(!res.ok)return showErr('recover-error',d.error);
+  document.getElementById('recover-step1').style.display='none';
+  document.getElementById('recover-step2').style.display='block';
+  showSuc('recover-success','✓ Request sent! Your admin will provide a recovery code.');
+}
+async function resetPassword(){
+  hideErr('recover-error');
+  const username=document.getElementById('recover-username').value.trim();
+  const recovery_code=document.getElementById('recover-code').value.trim();
+  const new_password=document.getElementById('recover-newpass').value;
+  if(!username||!recovery_code||!new_password)return showErr('recover-error','Fill in all fields');
+  const res=await fetch('/api/reset-password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,recovery_code,new_password})});
+  const d=await res.json();
+  if(!res.ok)return showErr('recover-error',d.error);
+  showSuc('recover-success','✓ Password reset! You can now log in.');
+  setTimeout(()=>{
+    // Go to login and pre-fill username
+    showTab('login');
+    document.getElementById('login-username').value=username;
+    // Reset entire recovery form to initial state
+    document.getElementById('recover-username').value='';
+    document.getElementById('recover-code').value='';
+    document.getElementById('recover-newpass').value='';
+    document.getElementById('recover-step1').style.display='block';
+    document.getElementById('recover-step2').style.display='none';
+    document.getElementById('recover-stage1').style.display='block';
+    document.getElementById('recover-stage2').style.display='none';
+    hideErr('recover-error');
+    document.getElementById('recover-success').style.display='none';
+  },1500);
+}
+
+// ── Dashboard ─────────────────────────────────────────────────────
+function initDashboard(username, displayName){
+  document.getElementById('auth-screen').style.display='none';
+  document.getElementById('dashboard').style.display='block';
+  document.getElementById('dash-username').textContent=displayName||username;
+  document.getElementById('acct-display').value=displayName||'';
+  showPanel('files');
+  loadFriends();
+  loadNotifications();
+  loadStorageBar();
+  startPolling();
+}
+
+function showPanel(name){
+  // Always close chat when switching panels
+  const cv = document.getElementById('chat-view');
+  if(cv && cv.classList.contains('open')){
+    activeChatUser = null;
+    cv.style.display = 'none';
+    cv.classList.remove('open');
+    const cp = document.getElementById('conv-panel');
+    if(cp) cp.style.display = 'block';
+  }
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(n=>n.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  document.getElementById('nav-'+name)?.classList.add('active');
+  if(name==='files')    loadFiles();
+  if(name==='trash')    loadTrash();
+  if(name==='friends')  loadFriends();
+  if(name==='messages') loadConversations();
+  if(name==='notifications'){loadNotifications();markAllRead();}
+}
+
+function startPolling(){
+  clearInterval(pollTimer);
+  pollTimer=setInterval(async()=>{
+    const res=await fetch('/api/me');
+    if(!res.ok){clearInterval(pollTimer);return;}
+    const d=await res.json();
+    updateBadges(d);
+    // If chat is open, refresh messages silently
+    if(activeChatUser) refreshChat();
+  },8000); // Poll every 8s for faster messaging
+}
+
+function updateBadges(d){
+  const nb=document.getElementById('notif-count');
+  const mb=document.getElementById('msg-badge');
+  const fb=document.getElementById('friend-badge');
+  nb.style.display=d.unread_notifs>0?'block':'none';
+  nb.textContent=d.unread_notifs;
+  mb.style.display=d.unread_msgs>0?'block':'none';
+  mb.textContent=d.unread_msgs;
+  // Friend badge: pending transfers + friend requests (polled via /api/me)
+  const friendAlerts=(d.pending_transfers||0);
+  fb.style.display=friendAlerts>0?'block':'none';
+  fb.textContent=friendAlerts>0?friendAlerts:'!';
+}
+
+// ── Storage ───────────────────────────────────────────────────────
+async function loadStorage(){
+  const res=await fetch('/api/me');
+  if(!res.ok)return;
+  const d=await res.json();
+  updateBadges(d);
+  const pct=Math.min(100,(d.storage_used/d.quota)*100).toFixed(1);
+  document.getElementById('storage-bar').style.width=pct+'%';
+  document.getElementById('storage-used-label').textContent=fmt(d.storage_used)+' used';
+  document.getElementById('storage-quota-label').textContent=fmt(d.quota)+' total';
+}
+
+// ── Files ─────────────────────────────────────────────────────────
+async function loadFiles(){
+  const q=document.getElementById('search-input').value.trim();
+  const url=q?'/api/files?q='+encodeURIComponent(q):'/api/files';
+  const res=await fetch(url);
+  if(!res.ok)return;
+  allFiles=await res.json();
+  renderFiles(allFiles);
+  loadStorage();
+}
+
+function renderFiles(files){
+  const el=document.getElementById('file-list');
+  const title=document.getElementById('files-title');
+  const q=document.getElementById('search-input').value.trim();
+  title.textContent=q?`Search: "${q}"`:`Your Files (${files.length})`;
+  if(!files.length){
+    el.innerHTML=`<div class="empty-state"><span class="empty-state-icon">📂</span><div class="empty-state-text">${q?'No files match your search.':'No files yet. Upload something!'}</div></div>`;
+    return;
+  }
+  el.innerHTML=files.map(f=>`
+    <div class="file-item ${selectedIds.has(f.id)?'selected':''}" id="file-${f.id}">
+      <input type="checkbox" class="file-check" ${selectedIds.has(f.id)?'checked':''} onchange="toggleSelect(${f.id},this.checked)">
+      <div class="file-icon">${fileIcon(f.filename)}</div>
+      <div class="file-info">
+        <div class="file-name" title="${esc(f.filename)}">${esc(f.filename)}</div>
+        <div class="file-meta">${fmt(f.size)} · ${fmtDate(f.uploaded_at)}</div>
+      </div>
+      <div class="file-actions">
+        <button class="btn-dl" style="color:var(--accent2);border-color:var(--accent2)" onclick="openSendModal(${f.id},'${esc(f.filename)}')" title="Send to friend">→</button>
+        <a class="btn-dl" href="/api/download/${f.id}" download title="Download">↓</a>
+        <button class="btn btn-danger btn-sm" onclick="deleteSingle(${f.id})">✕</button>
+      </div>
+    </div>`).join('');
+}
+
+function toggleSelect(id,checked){
+  if(checked)selectedIds.add(id); else selectedIds.delete(id);
+  document.getElementById('file-'+id)?.classList.toggle('selected',checked);
+  document.getElementById('bulk-count').textContent=selectedIds.size+' selected';
+  document.getElementById('bulk-bar').classList.toggle('show',selectedIds.size>0);
+}
+function clearSelection(){selectedIds.clear();renderFiles(allFiles);document.getElementById('bulk-bar').classList.remove('show');}
+
+async function bulkDelete(){
+  if(!selectedIds.size)return;
+  const ids=Array.from(selectedIds);
+  const res=await fetch('/api/delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ids})});
+  const d=await res.json();
+  clearSelection();loadFiles();
+  toast(d.moved+' file(s) moved to trash','tok');
+}
+async function deleteSingle(id){
+  await fetch('/api/delete/'+id,{method:'DELETE'});
+  loadFiles();toast('Moved to trash','tok');
+}
+
+function debounceSearch(q){
+  clearTimeout(searchTimer);
+  searchTimer=setTimeout(()=>loadFiles(),300);
+}
+function clearSearch(){document.getElementById('search-input').value='';loadFiles();}
+
+// ── Upload ────────────────────────────────────────────────────────
+let _currentXHR = null;
+let _uploadCancelled = false;
+
+function cancelUpload(){
+  _uploadCancelled = true;
+  if(_currentXHR){ _currentXHR.abort(); _currentXHR=null; }
+  const progress=document.getElementById('upload-progress');
+  const fill=document.getElementById('progress-fill');
+  const label=document.getElementById('progress-label');
+  const stats=document.getElementById('progress-stats');
+  fill.style.width='0%';
+  label.textContent='Cancelled';
+  stats.textContent='';
+  setTimeout(()=>{
+    progress.style.display='none';
+    label.textContent='Uploading…';
+  },1200);
+  document.getElementById('file-input').value='';
+  toast('Upload cancelled','ter',3000);
+}
+
+async function uploadFiles(files){
+  if(!files.length)return;
+
+  // Pre-flight quota check
+  const meRes=await fetch('/api/me');
+  if(meRes.ok){
+    const me=await meRes.json();
+    const totalSize=Array.from(files).reduce((s,f)=>s+f.size,0);
+    const remaining=me.quota - me.storage_used;
+    if(totalSize > remaining){
+      toast('⚠ Not enough storage — '+fmtSize(remaining)+' remaining','ter',7000);
+      document.getElementById('file-input').value='';
+      return;
+    }
+  }
+
+  const progress = document.getElementById('upload-progress');
+  const fill     = document.getElementById('progress-fill');
+  const label    = document.getElementById('progress-label');
+  const stats    = document.getElementById('progress-stats');
+  progress.style.display='block';
+  fill.style.width='0%';
+  stats.textContent='';
+  _uploadCancelled=false;
+
+  let ok=0;
+  const fileArr=Array.from(files);
+
+  for(let i=0;i<fileArr.length;i++){
+    if(_uploadCancelled) break;
+    const file=fileArr[i];
+    const baseOffset = i/fileArr.length;
+    const perFile    = 1/fileArr.length;
+    const startTime  = Date.now();
+    let lastLoaded   = 0;
+    let lastTime     = startTime;
+    // Sliding window for speed (last 3 samples)
+    const speedSamples=[];
+
+    const result = await new Promise(resolve=>{
+      const fd=new FormData();
+      fd.append('file',file);
+      const xhr=new XMLHttpRequest();
+      _currentXHR=xhr;
+
+      xhr.upload.addEventListener('progress',e=>{
+        if(!e.lengthComputable)return;
+
+        const now=Date.now();
+        const dt=(now-lastTime)/1000;
+        if(dt>0.3){
+          const bytesPerSec=(e.loaded-lastLoaded)/dt;
+          if(bytesPerSec>0) speedSamples.push(bytesPerSec);
+          if(speedSamples.length>5) speedSamples.shift();
+          lastLoaded=e.loaded;
+          lastTime=now;
+        }
+
+        const filePct=e.loaded/e.total;
+        const overall=(baseOffset+filePct*perFile)*100;
+        fill.style.width=overall+'%';
+
+        // Label: file count if multiple
+        if(fileArr.length>1){
+          label.textContent='File '+(i+1)+'/'+fileArr.length+' — '+Math.round(filePct*100)+'%  ·  '+fmtSize(e.loaded)+'/'+fmtSize(e.total);
+        } else {
+          label.textContent=Math.round(filePct*100)+'%  ·  '+fmtSize(e.loaded)+' / '+fmtSize(e.total);
+        }
+
+        // Stats: speed + ETA
+        if(speedSamples.length>0){
+          const avgSpeed=speedSamples.reduce((a,b)=>a+b,0)/speedSamples.length;
+          const remaining=e.total-e.loaded;
+          const etaSec=avgSpeed>0?Math.round(remaining/avgSpeed):null;
+          let etaStr='';
+          if(etaSec!==null){
+            if(etaSec<60) etaStr=etaSec+'s left';
+            else etaStr=Math.round(etaSec/60)+'m '+Math.round(etaSec%60)+'s left';
+          }
+          stats.textContent=fmtSize(Math.round(avgSpeed))+'/s'+(etaStr?' · '+etaStr:'');
+        }
+      });
+
+      xhr.addEventListener('load',()=>{
+        _currentXHR=null;
+        if(xhr.status>=200&&xhr.status<300){
+          resolve({ok:true});
+        } else {
+          let d={};try{d=JSON.parse(xhr.responseText);}catch(e){}
+          resolve({ok:false,status:xhr.status,error:d.error||'Upload failed'});
+        }
+      });
+      xhr.addEventListener('error',()=>{_currentXHR=null;resolve({ok:false,status:0,error:'Network error'});});
+      xhr.addEventListener('abort',()=>{_currentXHR=null;resolve({ok:false,status:0,error:'Cancelled'});});
+      xhr.open('POST','/api/upload');
+      xhr.send(fd);
+    });
+
+    if(result.ok){
+      ok++;
+    } else if(!_uploadCancelled){
+      if(result.status===413){
+        toast('⚠ Quota exceeded — free up space first','ter',7000);
+        break;
+      } else if(result.error!=='Cancelled'){
+        toast('Upload blocked: '+result.error,'ter',6000);
+      }
+    }
+  }
+
+  if(!_uploadCancelled){
+    fill.style.width='100%';
+    label.textContent='✓ Done';
+    stats.textContent='';
+    setTimeout(()=>{
+      progress.style.display='none';
+      fill.style.width='0%';
+      label.textContent='Uploading…';
+    },800);
+    if(ok>0) toast('✓ '+ok+' file'+(ok>1?'s':'')+' uploaded','tok');
+  }
+
+  document.getElementById('file-input').value='';
+  loadFiles();
+  loadStorageBar();
+}
+
+async function loadStorageBar(){
+  const res=await fetch('/api/me');
+  if(!res.ok)return;
+  const d=await res.json();
+  updateStorageBar(d.storage_used, d.quota);
+}
+
+function updateStorageBar(used, quota){
+  const pct=quota>0?Math.min(100,Math.round(used/quota*100)):0;
+  const bar=document.getElementById('storage-bar');
+  const usedLbl=document.getElementById('storage-used-label');
+  const quotaLbl=document.getElementById('storage-quota-label');
+  if(bar) bar.style.width=pct+'%';
+  if(bar){
+    if(pct>90) bar.style.background='var(--red)';
+    else if(pct>70) bar.style.background='var(--yl)';
+    else bar.style.background='';
+  }
+  if(usedLbl) usedLbl.textContent=fmtSize(used);
+  if(quotaLbl) quotaLbl.textContent=fmtSize(quota);
+}
+
+function fmtSize(b){
+  if(b>=1073741824)return(b/1073741824).toFixed(1)+' GB';
+  if(b>=1048576)return(b/1048576).toFixed(1)+' MB';
+  if(b>=1024)return(b/1024).toFixed(0)+' KB';
+  return b+' B';
+}
+// ── Drag to anywhere in files panel ──────────────────────────
+let dragCounter = 0;
+document.addEventListener('dragenter', e => {
+  const panel = document.getElementById('panel-files');
+  const overlay = document.getElementById('drag-overlay');
+  if(!panel || !overlay || !panel.classList.contains('active')) return;
+  e.preventDefault();
+  dragCounter++;
+  if(dragCounter === 1) overlay.classList.add('active');
+});
+document.addEventListener('dragleave', e => {
+  const overlay = document.getElementById('drag-overlay');
+  dragCounter--;
+  if(dragCounter === 0 && overlay) overlay.classList.remove('active');
+});
+document.addEventListener('dragover', e => { e.preventDefault(); });
+document.addEventListener('drop', e => {
+  e.preventDefault();
+  dragCounter = 0;
+  const overlay = document.getElementById('drag-overlay');
+  const panel = document.getElementById('panel-files');
+  if(overlay) overlay.classList.remove('active');
+  if(!panel || !panel.classList.contains('active')) return;
+  if(e.dataTransfer.files.length) uploadFiles(e.dataTransfer.files);
+});
+const zone = document.getElementById('upload-zone');
+
+// ── Send modal ────────────────────────────────────────────────────
+async function openSendModal(fileId,filename){
+  sendFileId=fileId;
+  document.getElementById('send-filename-label').textContent=filename;
+  hideErr('send-error');
+  // Show modal immediately with loading state
+  const sfl=document.getElementById('send-friends-list');
+  sfl.innerHTML='<p style="color:var(--muted);font-size:11px;text-align:center;padding:12px">Loading friends…</p>';
+  document.getElementById('send-modal').classList.add('show');
+  // Fetch friends in background
+  const res=await fetch('/api/friends');
+  if(!res.ok){sfl.innerHTML='<p style="color:var(--muted);font-size:12px">Error loading friends.</p>';return;}
+  const d=await res.json();
+  if(!d.friends.length){
+    sfl.innerHTML='<p style="color:var(--muted);font-size:12px">Add friends first to send files.</p>';
+  } else {
+    sfl.innerHTML=d.friends.map(f=>`
+      <button id="send-btn-${esc(f.username)}" onclick="sendFileTo('${esc(f.username)}')"
+        style="display:block;width:100%;text-align:left;padding:11px 13px;margin-bottom:7px;
+               background:var(--bg);border:1px solid var(--border);color:var(--text);
+               font-family:'Space Mono',monospace;font-size:13px;cursor:pointer;-webkit-tap-highlight-color:transparent;">
+        👤 ${esc(f.username)}${f.display_name?` <span style="color:var(--muted);font-size:10px">(${esc(f.display_name)})</span>`:''}
+      </button>`).join('');
+  }
+}
+async function sendFileTo(to){
+  const btn=document.getElementById('send-btn-'+to);
+  if(btn){
+    btn.disabled=true;
+    btn.style.opacity='0.5';
+    btn.style.cursor='wait';
+    btn.innerHTML=btn.innerHTML.replace(/^👤/,'⏳');
+  }
+  const res=await fetch('/api/transfers/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({file_id:sendFileId,to_username:to})});
+  const d=await res.json();
+  if(!res.ok){
+    if(btn){btn.disabled=false;btn.style.opacity='1';btn.style.cursor='pointer';btn.innerHTML=btn.innerHTML.replace(/^⏳/,'👤');}
+    showErr('send-error',d.error);
+    return;
+  }
+  closeModal('send-modal');
+  toast('✓ File sent to '+to,'tok');
+}
+
+// ── Trash ─────────────────────────────────────────────────────────
+async function loadTrash(){
+  const res=await fetch('/api/trash');
+  if(!res.ok)return;
+  const items=await res.json();
+  const el=document.getElementById('trash-list');
+  if(!items.length){el.innerHTML='<div class="empty-state"><span class="empty-state-icon">🗑</span><div class="empty-state-text">Trash is empty</div></div>';return;}
+  el.innerHTML=items.map(i=>`
+    <div class="trash-item">
+      <div class="file-icon">${fileIcon(i.filename)}</div>
+      <div class="file-info"><div class="file-name">${esc(i.filename)}</div>
+        <div class="file-meta">${fmt(i.size)} · ${i.days_left}d left</div>
+      </div>
+      <div style="display:flex;gap:5px">
+        <button class="btn btn-blue btn-sm" onclick="restoreFile(${i.id})">↺</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteForever(${i.id})">✕</button>
+      </div>
+    </div>`).join('');
+}
+async function restoreFile(id){const res=await fetch('/api/trash/restore/'+id,{method:'POST'});if(res.ok){loadTrash();loadFiles();toast('Restored','tok');}else{const d=await res.json();toast(d.error,'ter');}}
+async function deleteForever(id){if(!confirm('Permanently delete?'))return;await fetch('/api/trash/'+id,{method:'DELETE'});loadTrash();toast('Deleted','tok');}
+async function emptyTrash(){if(!confirm('Delete all trash permanently?'))return;await fetch('/api/trash/empty',{method:'POST'});loadTrash();toast('Trash emptied','tok');}
+
+// ── Friends ───────────────────────────────────────────────────────
+async function loadFriends(){
+  const res=await fetch('/api/friends');
+  if(!res.ok)return;
+  const d=await res.json();
+  document.getElementById('friend-badge').style.display=d.pending_in.length?'block':'none';
+  const fl=document.getElementById('friends-list');
+  let html='';
+  d.pending_in.forEach(p=>{html+=`
+    <div class="friend-item" style="border-color:rgba(0,255,136,.25)">
+      <div class="friend-avatar">👋</div>
+      <div class="friend-info"><div class="friend-name">${esc(p.username)}</div><div class="friend-status">Wants to be friends</div></div>
+      <div class="friend-actions">
+        <button class="btn btn-primary btn-sm" onclick="respondInvite(${p.invite_id},'accept')">✓</button>
+        <button class="btn btn-danger btn-sm" onclick="respondInvite(${p.invite_id},'decline')">✕</button>
+      </div>
+    </div>`;});
+  d.friends.forEach(f=>{html+=`
+    <div class="friend-item">
+      <div class="friend-avatar">👤</div>
+      <div class="friend-info"><div class="friend-name">${esc(f.username)}</div><div class="friend-status">${esc(f.display_name||'Friend')}</div></div>
+      <div class="friend-actions">
+        <button class="btn btn-blue btn-sm" onclick="openChat('${esc(f.username)}')">💬</button>
+        <button class="btn btn-danger btn-sm" onclick="removeFriend(${f.id})">✕</button>
+      </div>
+    </div>`;});
+  d.pending_out.forEach(p=>{html+=`
+    <div class="friend-item" style="opacity:.55">
+      <div class="friend-avatar">⏳</div>
+      <div class="friend-info"><div class="friend-name">${esc(p.username)}</div><div class="friend-status">Invite pending…</div></div>
+    </div>`;});
+  // Incoming transfers
+  const tr=await fetch('/api/transfers').then(r=>r.json()).catch(()=>({incoming:[]}));
+  (tr.incoming||[]).forEach(t=>{html+=`
+    <div class="friend-item" style="border-color:rgba(0,136,255,.25);margin-top:6px">
+      <div class="file-icon">📨</div>
+      <div class="friend-info"><div class="friend-name">${esc(t.filename)}</div><div class="friend-status">From ${esc(t.from_username)} · ${fmt(t.size)}</div></div>
+      <div class="friend-actions">
+        <button class="btn btn-primary btn-sm" onclick="respondTransfer(${t.id},'accept')">✓</button>
+        <button class="btn btn-danger btn-sm" onclick="respondTransfer(${t.id},'decline')">✕</button>
+      </div>
+    </div>`;});
+  fl.innerHTML=html||'<div class="empty-state"><span class="empty-state-icon">👥</span><div class="empty-state-text">No friends yet.<br>Add someone by username above.</div></div>';
+}
+async function sendInvite(){
+  const un=document.getElementById('friend-input').value.trim();
+  hideErr('friend-error');
+  if(!un)return;
+  const res=await fetch('/api/friends/invite',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:un})});
+  const d=await res.json();
+  if(!res.ok){showErr('friend-error',d.error);return;}
+  document.getElementById('friend-input').value='';
+  loadFriends();toast('Invite sent!','tok');
+}
+async function respondInvite(id,action){await fetch('/api/friends/'+action+'/'+id,{method:'POST'});loadFriends();}
+async function removeFriend(id){if(!confirm('Remove friend?'))return;await fetch('/api/friends/remove/'+id,{method:'DELETE'});loadFriends();toast('Removed','tok');}
+async function respondTransfer(id,action){
+  const res=await fetch('/api/transfers/'+action+'/'+id,{method:'POST'});
+  if(!res.ok){const d=await res.json();toast(d.error,'ter');return;}
+  if(action==='accept'){loadFiles();toast('File received!','tok');}else toast('Declined','tok');
+  loadFriends();
+}
+
+// ── Messages ──────────────────────────────────────────────────────
+async function loadConversations(){
+  const res=await fetch('/api/messages/conversations');
+  if(!res.ok)return;
+  const convs=await res.json();
+  const cl=document.getElementById('conv-list');
+  if(!convs.length){cl.innerHTML='<div class="empty-state"><span class="empty-state-icon">💬</span><div class="empty-state-text">No conversations yet.<br>Message a friend from the Friends tab.</div></div>';return;}
+  cl.innerHTML=convs.map(c=>`
+    <div class="conv-item" onclick="openChat('${esc(c.username)}')">
+      <div class="conv-avatar">👤</div>
+      <div class="conv-info">
+        <div style="display:flex;align-items:center;gap:6px">
+          <div class="conv-name">${esc(c.username)}</div>
+          ${c.unread>0?`<span class="conv-badge">${c.unread}</span>`:''}
+        </div>
+        <div class="conv-preview">${esc(c.last_msg||'No messages yet')}</div>
+      </div>
+    </div>`).join('');
+}
+
+async function openChat(username){
+  activeChatUser=username;
+  // Switch to messages panel first
+  if(!document.getElementById('panel-messages').classList.contains('active')){
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    document.querySelectorAll('.nav-tab').forEach(n=>n.classList.remove('active'));
+    document.getElementById('panel-messages').classList.add('active');
+    document.getElementById('nav-messages').classList.add('active');
+  }
+  document.getElementById('conv-panel').style.display='none';
+  const cv=document.getElementById('chat-view');
+  cv.style.display='flex';
+  cv.classList.add('open');
+  document.getElementById('chat-username').textContent=username;
+  await refreshChat();
+  document.getElementById('msg-input').focus();
+}
+
+async function refreshChat(){
+  if(!activeChatUser)return;
+  const res=await fetch('/api/messages/'+activeChatUser);
+  if(!res.ok)return;
+  const msgs=await res.json();
+  const area=document.getElementById('chat-messages');
+  const wasAtBottom=area.scrollHeight-area.scrollTop<=area.clientHeight+40;
+  area.innerHTML=msgs.map(m=>`
+    <div class="msg ${m.mine?'mine':'theirs'}">
+      ${esc(m.body)}<div class="msg-time">${esc(m.time_fmt)}</div>
+    </div>`).join('');
+  if(wasAtBottom||msgs.length<3)area.scrollTop=area.scrollHeight;
+  // Update badges
+  const me=await fetch('/api/me').then(r=>r.ok?r.json():null);
+  if(me)updateBadges(me);
+}
+
+function closeChat(){
+  activeChatUser=null;
+  document.getElementById('chat-view').style.display='none';
+  document.getElementById('chat-view').classList.remove('open');
+  document.getElementById('conv-panel').style.display='block';
+  loadConversations();
+}
+
+async function sendMsg(){
+  if(!activeChatUser)return;
+  const input=document.getElementById('msg-input');
+  const body=input.value.trim();
+  if(!body)return;
+  input.value='';
+  // Optimistic render
+  const area=document.getElementById('chat-messages');
+  const now=new Date();
+  const timeStr=now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
+  area.innerHTML+=`<div class="msg mine">${esc(body)}<div class="msg-time">${timeStr}</div></div>`;
+  area.scrollTop=area.scrollHeight;
+  const res=await fetch('/api/messages/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({to_username:activeChatUser,body})});
+  if(!res.ok){const d=await res.json();toast(d.error,'ter');}
+}
+
+// ── Notifications ─────────────────────────────────────────────────
+async function loadNotifications(){
+  const res=await fetch('/api/notifications');
+  if(!res.ok)return;
+  const items=await res.json();
+  const el=document.getElementById('notif-list');
+  const unread=items.filter(i=>!i.read).length;
+  const nb=document.getElementById('notif-count');
+  nb.style.display=unread>0?'block':'none';
+  nb.textContent=unread;
+  if(!items.length){el.innerHTML='<div class="empty-state"><span class="empty-state-icon">🔔</span><div class="empty-state-text">No notifications</div></div>';return;}
+  const icons={message:'💬',file_transfer:'📨',friend_request:'👋',friend_accepted:'✓'};
+  el.innerHTML=items.map(i=>`
+    <div class="notif-item ${i.read?'':'unread'}">
+      <div class="notif-icon">${icons[i.type]||'📢'}</div>
+      <div class="notif-body"><div class="notif-msg">${esc(i.message)}</div><div class="notif-time">${esc(i.time_fmt)}</div></div>
+    </div>`).join('');
+}
+async function markAllRead(){await fetch('/api/notifications/read',{method:'POST'});loadNotifications();}
+
+// ── Account ───────────────────────────────────────────────────────
+async function saveProfile(){
+  const name=document.getElementById('acct-display').value.trim();
+  const res=await fetch('/api/account/update-profile',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({display_name:name})});
+  if(res.ok){document.getElementById('dash-username').textContent=name;toast('Saved','tok');}
+}
+async function changePassword(){
+  hideErr('pw-error');
+  document.getElementById('pw-success').style.display='none';
+  const cur=document.getElementById('pw-current').value;
+  const nw=document.getElementById('pw-new').value;
+  const con=document.getElementById('pw-confirm').value;
+  if(!cur||!nw)return showErr('pw-error','Fill in all fields');
+  if(nw!==con)return showErr('pw-error','New passwords do not match');
+  const res=await fetch('/api/account/change-password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({current_password:cur,new_password:nw})});
+  const d=await res.json();
+  if(!res.ok)return showErr('pw-error',d.error);
+  document.getElementById('pw-current').value='';
+  document.getElementById('pw-new').value='';
+  document.getElementById('pw-confirm').value='';
+  showSuc('pw-success','✓ Password changed!');
+}
+
+// ── Boot ──────────────────────────────────────────────────────────
+(async()=>{
+  const res=await fetch('/api/me');
+  if(res.ok){
+    const d=await res.json();
+    initDashboard(d.username,d.display_name);
+  }
+})();
+</script>
+
+<!-- Full-panel drag overlay -->
+<div id="drag-overlay">
+  <span>⬆ Drop to Upload</span>
+  <small>Release to add files</small>
+</div>
+
+</body>
+</html>

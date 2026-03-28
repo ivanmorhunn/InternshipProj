@@ -1,0 +1,12 @@
+# MeshCloud Admin Configuration
+# -----------------------------------------------
+# Copy this file to admin.conf and set your credentials:
+#   cp admin.conf.example admin.conf
+#
+# Then edit admin.conf with your desired values.
+# NEVER commit admin.conf to GitHub — it is in .gitignore.
+#
+# These credentials are used to log into the admin panel at /admin
+
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=changeme123

@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MeshCloud Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0a0f;--s1:#111118;--s2:#1a1a24;--bd:#2a2a3a;--ac:#00ff88;--ac2:#0088ff;--red:#ff3355;--yl:#ffcc00;--tx:#e8e8f0;--mu:#666680;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--tx);font-family:"Space Mono",monospace;min-height:100vh;padding:28px 16px;}
+body::before{content:"";position:fixed;inset:0;background-image:linear-gradient(rgba(0,255,136,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,136,.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+.wrap{max-width:1000px;margin:0 auto;position:relative;z-index:1;}
+.login-box{background:var(--s1);border:1px solid var(--bd);max-width:380px;margin:80px auto 0;padding:36px;position:relative;}
+.login-box::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--ac),var(--ac2));}
+.login-box h2{font-family:"Syne",sans-serif;font-size:18px;margin-bottom:22px;}
+input[type=password],input[type=text],input[type=number],select{width:100%;background:var(--bg);border:1px solid var(--bd);color:var(--tx);padding:10px 13px;font-family:"Space Mono",monospace;font-size:12px;outline:none;margin-bottom:9px;}
+input:focus,select:focus{border-color:var(--ac);}
+select{cursor:pointer;}
+.toprow{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;}
+.logo{font-family:"Syne",sans-serif;font-weight:800;font-size:20px;}
+.logo span{color:var(--ac);}
+.logo small{font-size:10px;color:var(--mu);font-family:"Space Mono",monospace;font-weight:400;margin-left:8px;}
+a.lout{font-size:10px;letter-spacing:2px;color:var(--mu);text-decoration:none;text-transform:uppercase;}
+a.lout:hover{color:var(--red);}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:20px;}
+.stat{background:var(--s1);border:1px solid var(--bd);padding:16px 12px;text-align:center;}
+.stat-n{font-family:"Syne",sans-serif;font-size:22px;font-weight:800;color:var(--ac);}
+.stat-l{font-size:9px;letter-spacing:2px;color:var(--mu);text-transform:uppercase;margin-top:3px;}
+.health-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:20px;}
+.health-card{background:var(--s1);border:1px solid var(--bd);padding:14px;}
+.health-label{font-size:9px;letter-spacing:2px;color:var(--mu);text-transform:uppercase;margin-bottom:6px;}
+.health-val{font-family:"Syne",sans-serif;font-size:18px;font-weight:800;}
+.hv-good{color:var(--ac);}
+.hv-warn{color:var(--yl);}
+.hv-bad{color:var(--red);}
+.mini-bar{height:3px;background:var(--bd);margin-top:5px;}
+.mini-fill{height:100%;transition:width .4s;}
+.tabs{display:flex;gap:0;margin-bottom:18px;border-bottom:1px solid var(--bd);}
+.tab-btn{padding:9px 18px;font-family:"Space Mono",monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;background:none;border:none;color:var(--mu);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s;}
+.tab-btn.active{color:var(--ac);border-bottom-color:var(--ac);}
+.tab-pane{display:none;}
+.tab-pane.active{display:block;}
+.card{background:var(--s1);border:1px solid var(--bd);margin-bottom:14px;position:relative;}
+.card::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--ac),var(--ac2));}
+.card-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--bd);}
+.card-title{font-family:"Syne",sans-serif;font-size:13px;font-weight:700;}
+table{width:100%;border-collapse:collapse;font-size:11px;}
+th{text-align:left;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--mu);padding:8px 13px;border-bottom:1px solid var(--bd);}
+td{padding:9px 13px;border-bottom:1px solid rgba(42,42,58,.5);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(255,255,255,.012);}
+.badge{display:inline-flex;align-items:center;padding:2px 7px;font-size:9px;letter-spacing:1px;}
+.bg{background:rgba(0,255,136,.1);color:var(--ac);border:1px solid rgba(0,255,136,.25);}
+.br{background:rgba(255,51,85,.1);color:var(--red);border:1px solid rgba(255,51,85,.25);}
+.bp{background:rgba(255,204,0,.1);color:var(--yl);border:1px solid rgba(255,204,0,.25);}
+.btn{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;font-family:"Space Mono",monospace;font-size:9px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;border:none;transition:all .15s;}
+.btn-p{background:var(--ac);color:#000;font-weight:700;width:100%;justify-content:center;padding:10px;}
+.btn-p:hover{background:#00ffaa;}
+.btn-g{background:transparent;border:1px solid var(--ac2);color:var(--ac2);}
+.btn-g:hover{background:var(--ac2);color:#fff;}
+.btn-r{background:transparent;border:1px solid var(--red);color:var(--red);}
+.btn-r:hover{background:var(--red);color:#fff;}
+.btn-y{background:transparent;border:1px solid var(--yl);color:var(--yl);}
+.btn-y:hover{background:var(--yl);color:#000;}
+.btn-d{background:transparent;border:1px solid var(--bd);color:var(--mu);}
+.btn-d:hover{border-color:var(--tx);color:var(--tx);}
+.act{display:flex;gap:4px;flex-wrap:wrap;}
+.bar-bg{height:3px;background:var(--bd);margin-top:3px;width:90px;}
+.bar-fill{height:100%;background:linear-gradient(90deg,var(--ac),var(--ac2));}
+.di{font-size:9px;color:var(--mu);margin-top:2px;}
+.code-box{background:var(--bg);border:1px solid var(--ac);color:var(--ac);padding:5px 10px;font-size:12px;letter-spacing:3px;font-weight:700;user-select:text;-webkit-user-select:text;}
+.empty{padding:28px;text-align:center;color:var(--mu);font-size:11px;}
+.err{background:rgba(255,51,85,.1);border:1px solid rgba(255,51,85,.3);color:var(--red);padding:8px 12px;font-size:11px;margin-bottom:10px;display:none;}
+.toast{position:fixed;bottom:20px;right:20px;background:var(--s2);border:1px solid var(--bd);padding:10px 16px;font-size:11px;z-index:999;opacity:0;transform:translateY(8px);transition:all .2s;pointer-events:none;max-width:300px;}
+.toast.show{opacity:1;transform:translateY(0);}
+.tok{border-color:var(--ac)!important;color:var(--ac);}
+.ter{border-color:var(--red)!important;color:var(--red);}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100;display:none;align-items:center;justify-content:center;backdrop-filter:blur(3px);}
+.overlay.show{display:flex;}
+.modal{background:var(--s1);border:1px solid var(--bd);padding:28px;max-width:380px;width:100%;position:relative;}
+.modal::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--red),#ff6600);}
+.modal-g::before{background:linear-gradient(90deg,var(--ac),var(--ac2))!important;}
+.modal h3{font-family:"Syne",sans-serif;font-size:15px;margin-bottom:8px;}
+.modal p{font-size:11px;color:var(--mu);line-height:1.7;margin-bottom:16px;}
+.mbtns{display:flex;gap:8px;}
+.mbtns .btn{flex:1;justify-content:center;}
+/* ── Recovery alert ── */
+@keyframes pulse-border{0%,100%{box-shadow:0 0 0 0 rgba(255,204,0,.5);}50%{box-shadow:0 0 0 6px rgba(255,204,0,0);}}
+@keyframes pulse-dot{0%,100%{opacity:1;}50%{opacity:.3;}}
+.recovery-alert{
+  display:none;background:rgba(255,204,0,.07);border:1px solid var(--yl);
+  padding:14px 18px;margin-bottom:16px;
+  animation:pulse-border 2s ease infinite;
+}
+.recovery-alert.show{display:flex;align-items:center;gap:14px;}
+.recovery-alert-icon{font-size:26px;flex-shrink:0;}
+.recovery-alert-body{flex:1;}
+.recovery-alert-title{font-family:"Syne",sans-serif;font-size:13px;font-weight:700;color:var(--yl);margin-bottom:3px;}
+.recovery-alert-sub{font-size:10px;color:var(--mu);letter-spacing:1px;}
+.recovery-alert-btn{font-family:"Space Mono",monospace;font-size:9px;letter-spacing:1px;text-transform:uppercase;padding:6px 14px;background:var(--yl);color:#000;border:none;cursor:pointer;font-weight:700;flex-shrink:0;}
+.recovery-alert-btn:hover{background:#ffe033;}
+/* Pulsing dot on tab button */
+.tab-btn .rdot{
+  display:inline-block;width:7px;height:7px;background:var(--yl);border-radius:50%;
+  margin-left:6px;vertical-align:middle;
+  animation:pulse-dot 1s ease infinite;
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div id="login-screen">
+  <div class="login-box">
+    <h2>Mesh<span style="color:var(--ac)">Cloud</span> Admin</h2>
+    <div class="err" id="login-err"></div>
+    <input type="text" id="admin-user" placeholder="Admin username" onkeydown="if(event.key==='Enter')doLogin()">
+    <input type="password" id="admin-pw" placeholder="Admin password" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="btn btn-p" onclick="doLogin()">→ Access Panel</button>
+  </div>
+</div>
+
+<div id="dashboard" style="display:none">
+  <!-- Recovery alert banner (shown when pending requests exist) -->
+  <div class="recovery-alert" id="recovery-alert">
+    <div class="recovery-alert-icon">🔑</div>
+    <div class="recovery-alert-body">
+      <div class="recovery-alert-title">Password Reset Requested</div>
+      <div class="recovery-alert-sub" id="recovery-alert-sub">— user(s) waiting for a recovery code</div>
+    </div>
+    <button class="recovery-alert-btn" onclick="showTab('recovery', document.querySelector('.tab-btn[onclick*=recovery]'))">View Requests →</button>
+  </div>
+  <div class="toprow">
+    <div class="logo">Mesh<span>Cloud</span><small>// Admin Console</small></div>
+    <div style="display:flex;align-items:center;gap:16px;">
+      <span style="font-size:9px;color:var(--mu);letter-spacing:1px">&#x21bb; <span id="last-updated">—</span></span>
+      <a href="/admin/logout" class="lout">[ logout ]</a>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="stat-n" id="s-users">—</div><div class="stat-l">Users</div></div>
+    <div class="stat"><div class="stat-n" id="s-files">—</div><div class="stat-l">Files</div></div>
+    <div class="stat"><div class="stat-n" id="s-pending">—</div><div class="stat-l">Pending Resets</div></div>
+    <div class="stat"><div class="stat-n" id="s-storage">—</div><div class="stat-l">Total Storage</div></div>
+  </div>
+
+  <div class="health-grid" id="health-grid" style="display:none">
+    <div class="health-card"><div class="health-label">CPU</div><div class="health-val" id="h-cpu">—</div><div class="mini-bar"><div class="mini-fill" id="h-cpu-bar" style="width:0%"></div></div></div>
+    <div class="health-card"><div class="health-label">RAM</div><div class="health-val" id="h-ram">—</div><div class="mini-bar"><div class="mini-fill" id="h-ram-bar" style="width:0%"></div></div></div>
+    <div class="health-card"><div class="health-label">Disk Free</div><div class="health-val hv-good" id="h-disk">—</div><div class="mini-bar"><div class="mini-fill" id="h-disk-bar" style="width:0%"></div></div></div>
+    <div class="health-card"><div class="health-label">Disk Used %</div><div class="health-val" id="h-disk-pct">—</div></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('users',this)">Users</button>
+    <button class="tab-btn" onclick="showTab('sessions',this)">Sessions</button>
+    <button class="tab-btn" id="recovery-tab-btn" onclick="showTab('recovery',this)">Recovery<span class="rdot" id="recovery-dot" style="display:none"></span></button>
+    <button class="tab-btn" onclick="showTab('logs',this)">Audit Logs</button>
+  </div>
+
+  <div class="tab-pane active" id="tab-users">
+    <div class="card">
+      <div class="card-head"><div class="card-title">All Users</div></div>
+      <div id="users-body"><div class="empty">Loading…</div></div>
+    </div>
+  </div>
+
+  <div class="tab-pane" id="tab-sessions">
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title">Active Sessions</div>
+        <span class="badge bg" id="online-badge">0 online</span>
+      </div>
+      <div id="sessions-body"><div class="empty">No active sessions</div></div>
+    </div>
+  </div>
+
+  <div class="tab-pane" id="tab-recovery">
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title">Password Recovery Requests</div>
+        <span class="badge bp" id="pending-badge">0 pending</span>
+      </div>
+      <div id="recovery-body"><div class="empty">No pending requests</div></div>
+    </div>
+  </div>
+
+  <div class="tab-pane" id="tab-logs">
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title">Audit Logs</div>
+        <span style="font-size:9px;color:var(--mu)">Last 100 events · auto-purged after 30 days</span>
+      </div>
+      <div id="logs-body"><div class="empty">Loading…</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- Delete modal -->
+<div class="overlay" id="del-modal">
+  <div class="modal">
+    <h3>Delete User</h3>
+    <p>Permanently delete <strong id="del-name"></strong> and all their files. Cannot be undone.</p>
+    <div class="mbtns">
+      <button class="btn btn-d" onclick="closeModal('del-modal')">Cancel</button>
+      <button class="btn btn-r" onclick="confirmDelete()">Delete Forever</button>
+    </div>
+  </div>
+</div>
+
+<!-- Quota modal -->
+<div class="overlay modal-g" id="quota-modal">
+  <div class="modal modal-g">
+    <h3>Set Storage Quota</h3>
+    <p>Set quota for <strong id="quota-username"></strong>:</p>
+    <input type="number" id="quota-mb" placeholder="Quota in MB" min="50" max="100000" style="margin-bottom:16px">
+    <div class="mbtns">
+      <button class="btn btn-d" onclick="closeModal('quota-modal')">Cancel</button>
+      <button class="btn btn-g" onclick="confirmQuota()">Save Quota</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let deleteTargetId = null;
+let quotaTargetId  = null;
+
+async function doLogin() {
+  const user = document.getElementById('admin-user').value.trim();
+  const pw   = document.getElementById('admin-pw').value;
+  const res  = await fetch('/admin/api/login', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({username: user, password: pw})
+  });
+  if (res.ok) {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('dashboard').style.display    = 'block';
+    loadData();
+    if(window._adminPoll) clearInterval(window._adminPoll);
+    window._adminPoll = setInterval(loadData, 1000);
+  } else {
+    const el = document.getElementById('login-err');
+    el.textContent = 'Invalid credentials';
+    el.style.display = 'block';
+  }
+}
+
+function showTab(name, btn) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+
+async function loadData() {
+  const ts = new Date().toLocaleTimeString();
+  const lu = document.getElementById('last-updated');
+  if(lu) lu.textContent = 'Updated ' + ts;
+  const res = await fetch('/api/admin/stats');
+  if (res.status === 401) { location.reload(); return; }
+  const d = await res.json();
+
+  document.getElementById('s-users').textContent   = d.stats.users;
+  document.getElementById('s-files').textContent   = d.stats.files;
+  document.getElementById('s-pending').textContent = d.stats.pending;
+  document.getElementById('s-storage').textContent = d.stats.total_storage;
+  document.getElementById('pending-badge').textContent = d.stats.pending + ' pending';
+  // Recovery alert banner
+  const pendingCount = d.stats.pending;
+  const alertEl  = document.getElementById('recovery-alert');
+  const dotEl    = document.getElementById('recovery-dot');
+  const subEl    = document.getElementById('recovery-alert-sub');
+  if(pendingCount > 0){
+    alertEl.classList.add('show');
+    dotEl.style.display='inline-block';
+    subEl.textContent = pendingCount + ' user' + (pendingCount>1?'s':'')+' waiting for a recovery code';
+  } else {
+    alertEl.classList.remove('show');
+    dotEl.style.display='none';
+  }
+
+  if (d.health && d.health.available) {
+    document.getElementById('health-grid').style.display = 'grid';
+    setHealth('h-cpu', 'h-cpu-bar', d.health.cpu_pct, '%');
+    setHealth('h-ram', 'h-ram-bar', d.health.ram_pct, '% — ' + d.health.ram_used + ' / ' + d.health.ram_total);
+    document.getElementById('h-disk').textContent     = d.health.disk_free + ' free';
+    document.getElementById('h-disk-pct').textContent = d.health.disk_pct + '%';
+    document.getElementById('h-disk-bar').style.width = d.health.disk_pct + '%';
+    document.getElementById('h-disk-bar').style.background = d.health.disk_pct > 85 ? 'var(--red)' : d.health.disk_pct > 60 ? 'var(--yl)' : 'var(--ac)';
+  }
+
+  const ub = document.getElementById('users-body');
+  ub.innerHTML = d.users.length ? `<table>
+    <tr><th>Username</th><th>Storage / Quota</th><th>Bandwidth ↑↓</th><th>Files</th><th>Status</th><th>Actions</th></tr>
+    ${d.users.map(u => `<tr>
+      <td><strong>${e(u.username)}</strong>${u.display_name ? `<div class="di">${e(u.display_name)}</div>` : ''}</td>
+      <td>${e(u.storage)} / ${e(u.quota)}<div class="bar-bg"><div class="bar-fill" style="width:${u.pct}%"></div></div></td>
+      <td style="font-size:10px;color:var(--mu)">↑ ${e(u.bandwidth_up)}<br>↓ ${e(u.bandwidth_down)}</td>
+      <td>${u.files}</td>
+      <td>
+        ${u.is_locked ? '<span class="badge br">Admin Locked</span>'
+          : u.login_locked ? '<span class="badge bp">Login Locked</span>'
+          : u.recovery_locked ? '<span class="badge bp">Recovery Locked</span>'
+          : '<span class="badge bg">Active</span>'}
+        ${u.attempts > 0 ? `<div class="di">${u.attempts} login fails</div>` : ''}
+        ${u.recovery_attempts > 0 ? `<div class="di">${u.recovery_attempts} recovery fails</div>` : ''}
+      </td>
+      <td><div class="act">
+        <button class="btn btn-g" onclick="genCode(${u.id})" title="Generate recovery code">↻ Code</button>
+        <button class="btn btn-d" onclick="openQuota(${u.id},'${e(u.username)}',${u.quota_raw})" title="Set quota">💾 Quota</button>
+        <button class="btn ${u.is_locked ? 'btn-g' : 'btn-y'}" onclick="toggleLock(${u.id})">${u.is_locked ? '🔓' : '🔒'}</button>
+        ${u.login_locked || u.recovery_locked || u.attempts > 0 || u.recovery_attempts > 0 ? `<button class="btn btn-d" onclick="unlockAttempts(${u.id})" title="Reset all lockouts">↺ Reset</button>` : ''}
+        <button class="btn btn-r" onclick="promptDelete(${u.id},'${e(u.username)}')">✕</button>
+      </div></td>
+    </tr>`).join('')}
+  </table>` : '<div class="empty">No users</div>';
+
+  const sb  = document.getElementById('sessions-body');
+  const onl = d.sessions.filter(s => s.online).length;
+  document.getElementById('online-badge').textContent = onl + ' online';
+  sb.innerHTML = d.sessions.length ? `<table>
+    <tr><th>Username</th><th>IP</th><th>Device</th><th>Last Seen</th><th>Expires</th></tr>
+    ${d.sessions.map(s => `<tr>
+      <td><strong>${e(s.username)}</strong></td>
+      <td style="font-family:monospace">${e(s.ip_address)}</td>
+      <td>${e(s.device_name)}</td>
+      <td><span class="badge ${s.online ? 'bg' : 'bp'}">${s.online ? '● Online' : s.mins_ago + 'm ago'}</span><div class="di">${e(s.last_seen)}</div></td>
+      <td style="color:var(--mu);font-size:10px">${e(s.expires)}</td>
+    </tr>`).join('')}
+  </table>` : '<div class="empty">No active sessions</div>';
+
+  const rb = document.getElementById('recovery-body');
+  rb.innerHTML = d.recovery.length ? `<table>
+    <tr><th>Username</th><th>Device / IP</th><th>Recovery Code</th><th>Status</th><th>Actions</th></tr>
+    ${d.recovery.map(r => `<tr style="${r.pending && !r.expired ? 'background:rgba(255,204,0,.04)' : ''}">
+      <td><strong>${e(r.username)}</strong><div class="di">${e(r.device_ip)}</div></td>
+      <td style="color:var(--mu);font-size:10px">${e(r.device_name)}</td>
+      <td>${r.expired ? '<span style="color:var(--red);font-size:10px">Expired</span>' : r.pending ? '<span style="color:var(--yl);font-size:10px;letter-spacing:1px">Awaiting approval</span>' : `<div class="code-box">${e(r.code)}</div>`}</td>
+      <td>${r.expired ? '<span class="badge br">Expired</span>' : r.pending ? '<span class="badge bp">⏳ Pending</span>' : `<span class="badge bg">${r.mins_left}m left</span>`}</td>
+      <td><div class="act">
+        ${r.pending && !r.expired
+          ? `<button class="btn btn-g" onclick="approveRecovery(${r.id},'${e(r.username)}')">✓ Approve</button>
+             <button class="btn btn-r" onclick="denyRecovery(${r.id},'${e(r.username)}')">✗ Deny</button>`
+          : `<button class="btn btn-g" id="copy-btn-${r.id}" onclick="copyCode('${e(r.code)}',${r.id})">📋 Copy</button>
+             <button class="btn btn-g" onclick="genCode(${r.id})" title="Regenerate code">↻ New</button>
+             <button class="btn btn-d" onclick="dismissRecovery(${r.id})">✕ Dismiss</button>`
+        }
+      </div></td>
+    </tr>`).join('')}
+  </table>` : '<div class="empty">✓ No pending requests</div>';
+
+  const lb = document.getElementById('logs-body');
+  lb.innerHTML = d.logs.length ? `<table>
+    <tr><th>Time</th><th>Event</th><th>User</th><th>IP</th><th>Detail</th></tr>
+    ${d.logs.map(l => `<tr>
+      <td style="color:var(--mu);white-space:nowrap;font-size:10px">${e(l.time)}</td>
+      <td style="color:${l.success ? '#aaffcc' : 'var(--red)'}">${e(l.type)}</td>
+      <td>${e(l.user)}</td>
+      <td style="font-family:monospace;font-size:10px">${e(l.ip)}</td>
+      <td style="color:var(--mu);font-size:10px">${e(l.detail)}</td>
+    </tr>`).join('')}
+  </table>` : '<div class="empty">No logs yet</div>';
+}
+
+function setHealth(valId, barId, pct, label) {
+  const el  = document.getElementById(valId);
+  const bar = document.getElementById(barId);
+  el.textContent = pct + (typeof label === 'string' ? label.replace(/^\d+/, '') : '%');
+  el.className   = 'health-val ' + (pct > 85 ? 'hv-bad' : pct > 60 ? 'hv-warn' : 'hv-good');
+  bar.style.width      = pct + '%';
+  bar.style.background = pct > 85 ? 'var(--red)' : pct > 60 ? 'var(--yl)' : 'var(--ac)';
+}
+
+async function genCode(userId) {
+  const res = await fetch('/api/admin/generate-recovery/' + userId, {method: 'POST'});
+  const d   = await res.json();
+  if (res.ok) { toast('Recovery code: ' + d.code, 'tok', 15000); loadData(); }
+  else toast(d.error, 'ter');
+}
+
+async function approveRecovery(userId, username) {
+  const res = await fetch('/api/admin/generate-recovery/' + userId, {method: 'POST'});
+  const d   = await res.json();
+  if (res.ok) {
+    toast('✓ Approved — code for ' + username + ': ' + d.code, 'tok', 30000);
+    loadData();
+  } else toast(d.error, 'ter');
+}
+
+function copyCode(code, rowId) {
+  const btn = document.getElementById('copy-btn-' + rowId);
+  const done = () => {
+    if(btn){ btn.textContent = '✓ Copied'; setTimeout(()=>{ btn.textContent = '📋 Copy'; }, 2000); }
+  };
+  if(navigator.clipboard) {
+    navigator.clipboard.writeText(code).then(done).catch(done);
+  } else {
+    const ta = document.createElement('textarea');
+    ta.value = code; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    done();
+  }
+}
+
+async function denyRecovery(userId, username) {
+  if (!confirm('Deny recovery request for ' + username + '?')) return;
+  await fetch('/api/admin/dismiss-recovery/' + userId, {method: 'POST'});
+  toast('✗ Recovery request denied for ' + username, 'ter', 4000);
+  loadData();
+}
+
+function openQuota(id, username, currentBytes) {
+  quotaTargetId = id;
+  document.getElementById('quota-username').textContent = username;
+  document.getElementById('quota-mb').value = Math.round(currentBytes / 1024 / 1024);
+  document.getElementById('quota-modal').classList.add('show');
+}
+
+async function confirmQuota() {
+  const mb  = parseInt(document.getElementById('quota-mb').value);
+  if (!mb || mb < 10) { toast('Minimum 50 MB', 'ter'); return; }
+  const res = await fetch('/api/admin/set-quota/' + quotaTargetId, {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({quota_mb: mb})
+  });
+  closeModal('quota-modal');
+  if (res.ok) { toast('Quota updated to ' + mb + ' MB', 'tok'); loadData(); }
+  else toast('Failed', 'ter');
+}
+
+async function toggleLock(userId) {
+  const res = await fetch('/api/admin/toggle-lock/' + userId, {method: 'POST'});
+  const d   = await res.json();
+  if (res.ok) { toast(d.locked ? 'Account locked' : 'Account unlocked', 'tok'); loadData(); }
+  else toast(d.error, 'ter');
+}
+
+async function unlockAttempts(userId) {
+  await fetch('/api/admin/unlock-attempts/' + userId, {method: 'POST'});
+  toast('Attempts reset', 'tok');
+  loadData();
+}
+
+async function dismissRecovery(userId) {
+  await fetch('/api/admin/dismiss-recovery/' + userId, {method: 'POST'});
+  toast('Dismissed', 'tok');
+  loadData();
+}
+
+function promptDelete(id, name) {
+  deleteTargetId = id;
+  document.getElementById('del-name').textContent = name;
+  document.getElementById('del-modal').classList.add('show');
+}
+
+async function confirmDelete() {
+  if (!deleteTargetId) return;
+  const res = await fetch('/api/admin/delete-user/' + deleteTargetId, {method: 'DELETE'});
+  closeModal('del-modal');
+  if (res.ok) { toast('User deleted', 'tok'); loadData(); }
+  else { const d = await res.json(); toast(d.error, 'ter'); }
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('show');
+  deleteTargetId = null;
+  quotaTargetId  = null;
+}
+
+function e(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+let _tt;
+function toast(msg, type='tok', dur=4000) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show ' + type;
+  clearTimeout(_tt);
+  _tt = setTimeout(() => el.classList.remove('show'), dur);
+}
+
+// Auto-check login on load
+(async () => {
+  const res = await fetch('/api/admin/stats');
+  if (res.ok) {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('dashboard').style.display    = 'block';
+    loadData();
+  }
+})();
+</script>
+</body>
+</html>
