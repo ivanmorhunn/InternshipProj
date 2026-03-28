@@ -56,4 +56,4 @@ meshcloud-internship/
 
 ## Author
 
-Ivan Morhun — Penn State University, IST 432, Spring 2026
+Ivan Morhun — Penn State University, IST 495, Spring 2026
